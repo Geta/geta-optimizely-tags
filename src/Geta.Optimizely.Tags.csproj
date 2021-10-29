@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
     <PropertyGroup>
         <Version>$(PackageVersion)</Version>
         <TargetFramework>net5.0</TargetFramework>
         <Configurations>Release;Debug</Configurations>
         <Platforms>AnyCPU</Platforms>
-        <NuspecFile>Geta.Tags.nuspec</NuspecFile>
+        <NuspecFile>Geta.Optimizely.Tags.nuspec</NuspecFile>
         <NuspecBasePath>$(ProjectDir)..\src\</NuspecBasePath>
         <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
         <NuspecProperties>version=$(PackageVersion)</NuspecProperties>
@@ -16,7 +16,7 @@
       <PackageReference Include="EPiServer.CMS.UI.Core" Version="12.0.0-inte-020292" />
       <PackageReference Include="EPiServer.Framework" Version="12.0.0-inte-020092" />
     </ItemGroup>
-    
+
     <PropertyGroup>
         <SolutionDir Condition="$(SolutionDir) == ''">$(MSBuildProjectDirectory)\..\</SolutionDir>
         <TmpOutDir>$(SolutionDir)\tmp</TmpOutDir>
@@ -37,12 +37,12 @@
         <Copy SourceFiles="$(SolutionDir)\src\module\module.config" DestinationFolder="$(TmpOutDir)\content" />
         <Copy SourceFiles="@(ClientResources)" DestinationFiles="@(ClientResources -> '$(TmpOutDir)\content\5.0.0\ClientResources\%(RecursiveDir)%(Filename)%(Extension)')" />
 
-        <ZipDirectory SourceDirectory="$(TmpOutDir)\content" DestinationFile="$(OutDir)\Geta.Tags.zip" Overwrite="true" />
+        <ZipDirectory SourceDirectory="$(TmpOutDir)\content" DestinationFile="$(OutDir)\Geta.Optimizely.Tags.zip" Overwrite="true" />
 
         <!-- Cleanup -->
         <RemoveDir Directories="$(TmpOutDir)" />
     </Target>
     <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
-        <Exec Command="xcopy &quot;$(ProjectDir)bin\net5.0\Geta.Tags.zip&quot; &quot;$(SolutionDir)samples\Geta.Tags.Sample\modules\_protected\Geta.Tags\&quot; /Y /I /E" />
+        <Exec Command="xcopy &quot;$(ProjectDir)bin\net5.0\Geta.Optimizely.Tags.zip&quot; &quot;$(SolutionDir)samples\Geta.Optimizely.Tags.Sample\modules\_protected\Geta.Optimizely.Tags\&quot; /Y /I /E" />
     </Target>
 </Project>

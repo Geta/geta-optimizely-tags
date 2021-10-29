@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Tags", "src\Geta.Tags.csproj", "{3D0B83C2-512F-43E9-9E1F-CE2D6BB3625F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Optimizely.Tags", "src\Geta.Optimizely.Tags.csproj", "{3D0B83C2-512F-43E9-9E1F-CE2D6BB3625F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Tags.Sample", "samples\Geta.Tags.Sample\Geta.Tags.Sample.csproj", "{815B0960-1D63-4397-95E1-BF91E5EAFEE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Optimizely.Tags.Sample", "samples\Geta.Optimizely.Tags.Sample\Geta.Optimizely.Tags.Sample.csproj", "{815B0960-1D63-4397-95E1-BF91E5EAFEE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
