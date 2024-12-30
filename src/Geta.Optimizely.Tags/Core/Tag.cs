@@ -1,4 +1,4 @@
-﻿// Copyright (c) Geta Digital. All rights reserved.
+// Copyright (c) Geta Digital. All rights reserved.
 // Licensed under Apache-2.0. See the LICENSE file in the project root for more information
 
 using System;
@@ -30,6 +30,8 @@ namespace Geta.Optimizely.Tags.Core
         public IList<Guid> PermanentLinks { get; set; }
 
         public bool CheckedEditContentTags { get; set; }
+
+        public int ItemPageNumber { get; set; }
 
         public override int GetHashCode()
         {

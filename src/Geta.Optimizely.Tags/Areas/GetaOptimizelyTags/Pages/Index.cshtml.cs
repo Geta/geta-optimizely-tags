@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Web;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Data;
@@ -103,8 +104,40 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
 
         private void Load()
         {
+            SetPageNumberFromQueryString();
+            SetItemPageNumber();
+
             var items = FindTags().ToPagedList(Paging.PageNumber, Paging.PageSize);
             Items = items;
+        }
+        private void SetPageNumberFromQueryString()
+        {
+            var queryString = HttpContext.Request.QueryString.ToString();
+            var qs = HttpUtility.ParseQueryString(queryString);
+            if (!string.IsNullOrEmpty(qs["pageNumber"]) && int.TryParse(qs["pageNumber"], out int pageNumber))
+            {
+                Paging.PageNumber = pageNumber;
+            }
+        }
+
+        private void SetItemPageNumber()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Request.QueryString.ToString()))
+            {
+                var allTags = _tagRepository.GetAllTags().ToList().ToPagedList();
+                SetItemPageNumber(allTags);
+            }
+        }
+
+        private void SetItemPageNumber(IPagedList<Tag> items)
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                var itemPageNumber = (i / Paging.PageSize) + 1;
+                var tag = _tagRepository.GetTagById(items[i].Id);
+                tag.ItemPageNumber = itemPageNumber;
+                _tagRepository.Save(tag);
+            }
         }
 
         private IEnumerable<Tag> FindTags()
