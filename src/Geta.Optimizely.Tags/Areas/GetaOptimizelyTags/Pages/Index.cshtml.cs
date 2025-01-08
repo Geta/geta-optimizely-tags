@@ -124,8 +124,9 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
         {
             if (string.IsNullOrEmpty(HttpContext.Request.QueryString.ToString()))
             {
-                var allTags = _tagRepository.GetAllTags().ToList().ToPagedList();
-                SetItemPageNumber(allTags);
+                var allTags = _tagRepository.GetAllTags().ToList();
+                var pagedList = allTags.ToPagedList();
+                SetItemPageNumber(pagedList);
             }
         }
 
