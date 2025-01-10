@@ -112,9 +112,7 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
         }
         private void SetPageNumberFromQueryString()
         {
-            var queryString = HttpContext.Request.QueryString.ToString();
-            var qs = HttpUtility.ParseQueryString(queryString);
-            if (!string.IsNullOrEmpty(qs["pageNumber"]) && int.TryParse(qs["pageNumber"], out int pageNumber))
+            if (HttpContext.Request.Query.TryGetValue("pageNumber", out var value) && int.TryParse(value, out var pageNumber))
             {
                 Paging.PageNumber = pageNumber;
             }
