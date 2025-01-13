@@ -105,7 +105,6 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
         private void Load()
         {
             SetPageNumberFromQueryString();
-            SetItemPageNumber();
 
             var items = FindTags().ToPagedList(Paging.PageNumber, Paging.PageSize);
             Items = items;
@@ -114,28 +113,7 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
         {
             if (HttpContext.Request.Query.TryGetValue("pageNumber", out var value) && int.TryParse(value, out var pageNumber))
             {
-                Paging.PageNumber = pageNumber;
-            }
-        }
-
-        private void SetItemPageNumber()
-        {
-            if (string.IsNullOrEmpty(HttpContext.Request.QueryString.ToString()))
-            {
-                var allTags = _tagRepository.GetAllTags().ToList();
-                var pagedList = allTags.ToPagedList();
-                SetItemPageNumber(pagedList);
-            }
-        }
-
-        private void SetItemPageNumber(IPagedList<Tag> items)
-        {
-            for (var i = 0; i < items.Count; i++)
-            {
-                var itemPageNumber = (i / Paging.PageSize) + 1;
-                var tag = _tagRepository.GetTagById(items[i].Id);
-                tag.ItemPageNumber = itemPageNumber;
-                _tagRepository.Save(tag);
+                Paging.PageNumber = pageNumber == 0 ? 1 : pageNumber;
             }
         }
 

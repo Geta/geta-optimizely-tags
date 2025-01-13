@@ -1,4 +1,4 @@
-﻿// Copyright (c) Geta Digital. All rights reserved.
+// Copyright (c) Geta Digital. All rights reserved.
 // Licensed under Apache-2.0. See the LICENSE file in the project root for more information
 
 using System;
@@ -10,6 +10,8 @@ using EPiServer.DataAbstraction;
 using EPiServer.PlugIn;
 using EPiServer.Scheduler;
 using Geta.Optimizely.Tags.Core;
+using Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags.Models;
+using X.PagedList;
 
 namespace Geta.Optimizely.Tags
 {
@@ -36,6 +38,7 @@ namespace Geta.Optimizely.Tags
         public override string Execute()
         {
             var tags = _tagService.GetAllTags().ToList();
+            SetTagPageNumber(tags.ToPagedList());
             var contentGuids = GetTaggedContentGuids(tags);
 
             foreach (var contentGuid in contentGuids)
@@ -161,6 +164,18 @@ namespace Geta.Optimizely.Tags
 
                 tag.PermanentLinks.Remove(guid);
 
+                _tagService.Save(tag);
+            }
+        }
+
+        private void SetTagPageNumber(IPagedList<Tag> items)
+        {
+            var paging = new Paging();
+            for (var i = 0; i < items.Count; i++)
+            {
+                var itemPageNumber = (i / paging.PageSize) + 1;
+                var tag = _tagService.GetTagById(items[i].Id);
+                tag.ItemPageNumber = itemPageNumber;
                 _tagService.Save(tag);
             }
         }
