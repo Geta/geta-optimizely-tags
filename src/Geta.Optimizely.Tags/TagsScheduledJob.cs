@@ -170,10 +170,9 @@ namespace Geta.Optimizely.Tags
 
         private void SetTagPageNumber(IPagedList<Tag> items)
         {
-            var paging = new Paging();
             for (var i = 0; i < items.Count; i++)
             {
-                var itemPageNumber = (i / paging.PageSize) + 1;
+                var itemPageNumber = (i / Paging.PageSize) + 1;
                 var tag = _tagService.GetTagById(items[i].Id);
                 tag.ItemPageNumber = itemPageNumber;
                 _tagService.Save(tag);
