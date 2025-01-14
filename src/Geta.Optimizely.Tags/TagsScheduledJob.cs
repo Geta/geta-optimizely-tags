@@ -123,6 +123,7 @@ namespace Geta.Optimizely.Tags
         {
             return tags.Where(x => x?.PermanentLinks != null)
                 .SelectMany(x => x.PermanentLinks)
+                .Distinct()
                 .ToList();
         }
 
