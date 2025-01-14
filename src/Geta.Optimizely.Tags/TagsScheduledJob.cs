@@ -66,7 +66,7 @@ namespace Geta.Optimizely.Tags
 
                 if (content == null || (content is PageData data && data.IsDeleted))
                 {
-                    RemoveFromAllTags(contentGuid, tags);
+                    RemoveFromTags(contentGuid, tags);
                     continue;
                 }
 
@@ -80,31 +80,23 @@ namespace Geta.Optimizely.Tags
         {
             var contentType = _contentTypeRepository.Load(content.ContentTypeID);
 
-            foreach (var propertyDefinition in contentType.PropertyDefinitions)
-            {
-                if (!TagsHelper.IsTagProperty(propertyDefinition))
-                {
-                    continue;
-                }
+            var tagProperties = contentType.PropertyDefinitions
+                .Where(TagsHelper.IsTagProperty);
 
-                var tagNames = GetTagNames(content, propertyDefinition);
+            var contentTagNames = tagProperties
+                .Select(propertyDefinition => GetTagNames(content, propertyDefinition))
+                .Where(tagNames => !string.IsNullOrEmpty(tagNames));
 
-                var allTags = tags;
+            var contentTags = contentTagNames
+                .SelectMany(ParseTags)
+                .Distinct()
+                .ToList();
 
-                if (tagNames == null)
-                {
-                    RemoveFromAllTags(content.ContentGuid, allTags);
-                    continue;
-                }
+            // make sure the tags it has added has the ContentReference
+            ValidateTags(content.ContentGuid, contentTags);
 
-                var addedTags = ParseTags(tagNames);
-
-                // make sure the tags it has added has the ContentReference
-                ValidateTags(allTags, content.ContentGuid, addedTags);
-
-                // make sure there's no ContentReference to this ContentReference in the rest of the tags
-                RemoveFromAllTags(content.ContentGuid, allTags);
-            }
+            // make sure there's no ContentReference to this ContentReference in the rest of the tags
+            RemoveFromTags(content.ContentGuid, tags.Except(contentTags));
         }
 
         private string GetTagNames(IContent content, PropertyDefinition propertyDefinition)
@@ -142,12 +134,10 @@ namespace Geta.Optimizely.Tags
                 .ToList();
         }
 
-        private void ValidateTags(ICollection<Tag> allTags, Guid contentGuid, IEnumerable<Tag> addedTags)
+        private void ValidateTags(Guid contentGuid, IEnumerable<Tag> addedTags)
         {
             foreach (var addedTag in addedTags)
             {
-                allTags.Remove(addedTag);
-
                 if (addedTag.PermanentLinks.Contains(contentGuid)) continue;
 
                 addedTag.PermanentLinks.Add(contentGuid);
@@ -156,7 +146,7 @@ namespace Geta.Optimizely.Tags
             }
         }
 
-        private void RemoveFromAllTags(Guid guid, IEnumerable<Tag> tags)
+        private void RemoveFromTags(Guid guid, IEnumerable<Tag> tags)
         {
             foreach (var tag in tags)
             {
