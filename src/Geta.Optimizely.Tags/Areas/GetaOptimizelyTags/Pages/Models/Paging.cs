@@ -1,15 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags.Models
+namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags.Models;
+
+public class Paging
 {
-    public class Paging
-    {
-        public const int DefaultPageSize = 50;
+    [FromQuery(Name = "page")]
+    public int PageNumber { get; set; } = 1;
 
-        [FromQuery(Name = "page")]
-        public int PageNumber { get; set; } = 1;
-
-        [FromQuery(Name = "page-size")]
-        public int PageSize { get; set; } = DefaultPageSize;
-    }
+    public static int PageSize { get => 50; }
 }

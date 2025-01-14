@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Web;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Data;
@@ -103,8 +104,17 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
 
         private void Load()
         {
+            SetPageNumberFromQueryString();
+
             var items = FindTags().ToPagedList(Paging.PageNumber, Paging.PageSize);
             Items = items;
+        }
+        private void SetPageNumberFromQueryString()
+        {
+            if (HttpContext.Request.Query.TryGetValue("pageNumber", out var value) && int.TryParse(value, out var pageNumber))
+            {
+                Paging.PageNumber = pageNumber == 0 ? 1 : pageNumber;
+            }
         }
 
         private IEnumerable<Tag> FindTags()
