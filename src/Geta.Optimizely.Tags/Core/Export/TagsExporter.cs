@@ -12,7 +12,7 @@ namespace Geta.Optimizely.Tags.Core.Export
         public virtual void AddTagsToExport(ITransferContext transferContext)
         {
             if (transferContext is not ITransferHandlerContext exporter
-                || exporter.TransferType != TypeOfTransfer.MirroringExporting)
+                || exporter.TransferType != TypeOfTransfer.Exporting)
             {
                 return;
             }

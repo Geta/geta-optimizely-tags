@@ -19,7 +19,7 @@ namespace Geta.Optimizely.Tags.Core
         public static string GetGroupKeyFromAttributes(
             TagsGroupKeyAttribute groupKeyAttribute,
             CultureSpecificAttribute cultureSpecificAttribute,
-            IContent content)
+            IContentData content)
         {
             var groupKey = string.Empty;
 

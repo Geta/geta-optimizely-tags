@@ -1,5 +1,6 @@
-﻿@using EPiServer.Framework.Web.Resources
+@using EPiServer.Framework.Web.Resources
 @using EPiServer.Shell.Navigation
+@addTagHelper *, EPiServer.Shell.UI
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,10 +12,8 @@
 </head>
 <body>
 @Html.AntiForgeryToken()
-@Html.Raw(Html.CreatePlatformNavigationMenu())
+<platform-navigation />
 <noscript>You need to enable JavaScript to run this app.</noscript>
-<div @Html.Raw(Html.ApplyPlatformNavigation()) style="z-index:auto;">
-</div>
 
 @RenderBody()
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
