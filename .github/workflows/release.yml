@@ -9,9 +9,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
       - name: Verify commit exists in origin/master
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
@@ -23,11 +27,11 @@ jobs:
       - name: Release
         run: |
           echo "${env:VERSION}"
-          dotnet build --configuration Release /p:Version=${{env.VERSION}}
+          dotnet build src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}}
       - name: Test
-        run: dotnet test --configuration Release /p:Version=${{env.VERSION}} --no-build
+        run: dotnet test src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build
       - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${{env.VERSION}} --output .
+        run: dotnet pack src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --output .
       - name: Push
         run: |
           dotnet nuget push Geta.Optimizely.Tags.${{env.VERSION}}.nupkg --source https://nuget.pkg.github.com/Geta/index.json --api-key ${{env.GITHUB_TOKEN}}

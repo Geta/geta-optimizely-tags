@@ -15,8 +15,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
       - name: Build
-        run: dotnet build
+        run: dotnet build src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj
 
       - name: Test
-        run: dotnet test --filter Category!=Integration
+        run: dotnet test src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --filter Category!=Integration
