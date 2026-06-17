@@ -112,7 +112,7 @@ Ensure your system is properly configured to meet all prerequisites for Geta Fou
     dotnet run
 
     # Linux / MacOS
-    sudo env "PATH=$PATH" bash
+    # Make sure your user can access Docker (member of the 'docker' group) so 'dotnet run' can start the containers.
     chmod +x sub/geta-foundation-core/src/Foundation/docker/build-script/*.sh
     cd sub/geta-foundation-core/src/Foundation.AppHost
     dotnet run
@@ -127,13 +127,20 @@ Ensure your system is properly configured to meet all prerequisites for Geta Fou
    dotnet run
 
    # Linux / MacOS
-   sudo env "PATH=$PATH" bash
+   # Make sure your user can access Docker (member of the 'docker' group) so the setup/build can start the containers.
    cd sub/geta-foundation-core
    chmod +x *.sh
    ./setup.sh
    cd ../../src/Geta.Optimizely.Tags.Web
    dotnet run
 ```
+
+### 🔍 Optimizely Graph (optional)
+
+The sample runs **without** Graph credentials out of the box — the `Optimizely:ContentGraph` keys in
+`src/Geta.Optimizely.Tags.Web/appsettings.json` are empty, so the Graph sync client is replaced with a
+no-op and the site starts normally (no "Invalid credentials" startup failure). To enable Graph indexing
+and search, fill in `AppKey`, `Secret`, and `SingleKey` from your Optimizely Graph subscription.
 
 If you run into any issues, check the FAQ section [here](https://github.com/Geta/geta-foundation-core?tab=readme-ov-file#faq)
 
