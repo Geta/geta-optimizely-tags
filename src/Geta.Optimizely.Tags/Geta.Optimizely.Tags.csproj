@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <PackageId>Geta.Optimizely.Tags</PackageId>
     <Title>Geta Optimizely Tags</Title>
@@ -24,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EPiServer.CMS.Core" Version="12.0.3" />
-    <PackageReference Include="EPiServer.CMS.UI.Core" Version="12.0.2" />
-    <PackageReference Include="EPiServer.Framework" Version="12.0.3" />
+    <PackageReference Include="EPiServer.CMS.Core" Version="13.1.0" />
+    <PackageReference Include="EPiServer.CMS.UI.Core" Version="13.1.0" />
+    <PackageReference Include="EPiServer.Framework" Version="13.1.0" />
     <PackageReference Include="X.PagedList" Version="8.1.0" />
   </ItemGroup>
 

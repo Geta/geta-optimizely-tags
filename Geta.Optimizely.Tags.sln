@@ -1,13 +1,19 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sandbox", "sandbox", "{843C76E6-8FD1-46B7-AFE1-0EE250FC8511}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Foundation", "sandbox\Foundation\src\Foundation\Foundation.csproj", "{D86084DE-6588-4FA4-A292-0B27B082A38F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Optimizely.Tags", "src\Geta.Optimizely.Tags\Geta.Optimizely.Tags.csproj", "{986630E8-5E1A-454D-B416-BF8A5D969415}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Optimizely.Tags.Web", "src\Geta.Optimizely.Tags.Web\Geta.Optimizely.Tags.Web.csproj", "{A1B2C3D4-0001-4E5F-8A9B-111122223333}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "geta-foundation-core", "geta-foundation-core", "{A8A926D7-1ECE-45B9-9B74-C3D65767480D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation", "sub\geta-foundation-core\src\Foundation\Foundation.csproj", "{A5D82359-7825-4BEF-BBDB-B4B540492699}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.AppHost", "sub\geta-foundation-core\src\Foundation.AppHost\Foundation.AppHost.csproj", "{65E287B6-1439-4F5D-9733-051153FAC33C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.AppHost.ServiceDefaults", "sub\geta-foundation-core\src\Foundation.AppHost.ServiceDefaults\Foundation.AppHost.ServiceDefaults.csproj", "{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,20 +21,34 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D86084DE-6588-4FA4-A292-0B27B082A38F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D86084DE-6588-4FA4-A292-0B27B082A38F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D86084DE-6588-4FA4-A292-0B27B082A38F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D86084DE-6588-4FA4-A292-0B27B082A38F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{986630E8-5E1A-454D-B416-BF8A5D969415}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{986630E8-5E1A-454D-B416-BF8A5D969415}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{986630E8-5E1A-454D-B416-BF8A5D969415}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{986630E8-5E1A-454D-B416-BF8A5D969415}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-0001-4E5F-8A9B-111122223333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-0001-4E5F-8A9B-111122223333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-0001-4E5F-8A9B-111122223333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-0001-4E5F-8A9B-111122223333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5D82359-7825-4BEF-BBDB-B4B540492699}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5D82359-7825-4BEF-BBDB-B4B540492699}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5D82359-7825-4BEF-BBDB-B4B540492699}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5D82359-7825-4BEF-BBDB-B4B540492699}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65E287B6-1439-4F5D-9733-051153FAC33C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65E287B6-1439-4F5D-9733-051153FAC33C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65E287B6-1439-4F5D-9733-051153FAC33C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65E287B6-1439-4F5D-9733-051153FAC33C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D86084DE-6588-4FA4-A292-0B27B082A38F} = {843C76E6-8FD1-46B7-AFE1-0EE250FC8511}
+		{A5D82359-7825-4BEF-BBDB-B4B540492699} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
+		{65E287B6-1439-4F5D-9733-051153FAC33C} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
+		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCDEB1D3-2DDF-4C99-9323-4EF8C50C2AC5}
