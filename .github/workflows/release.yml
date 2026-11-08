@@ -31,22 +31,16 @@ jobs:
       - name: Test
         run: dotnet test tests/Geta.Optimizely.Tags.Tests/Geta.Optimizely.Tags.Tests.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build --filter Category!=Integration
       - name: Pack
-        run: dotnet pack src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build --output .
+        run: dotnet pack src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build --output artifacts
       - name: Push
         run: |
-          dotnet nuget push Geta.Optimizely.Tags.${{env.VERSION}}.nupkg --source https://nuget.pkg.github.com/Geta/index.json --api-key ${{env.GITHUB_TOKEN}}
+          dotnet nuget push artifacts/Geta.Optimizely.Tags.${{env.VERSION}}.nupkg --source https://nuget.pkg.github.com/Geta/index.json --api-key ${{env.GITHUB_TOKEN}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create GitHub Release with Auto-Generated Notes
+      # Only the Geta.Optimizely.Tags package is attached to the release. Searching the checkout for *.nupkg would also
+      # pick up the packages that are checked in to the sandbox submodule.
+      - name: Create GitHub Release with the package and auto-generated notes
         run: |
-          gh release create ${{ github.ref_name }} --generate-notes     
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Loop through all .nupkg files in the current directory and upload them to the release
-        run: |
-          Get-ChildItem -Filter *.nupkg -Recurse | ForEach-Object {
-            Write-Host "Uploading file: $($_.Name)"
-            gh release upload ${{ github.ref_name }} $_.FullName --clobber
-          }
+          gh release create ${{ github.ref_name }} artifacts/Geta.Optimizely.Tags.${{env.VERSION}}.nupkg --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
