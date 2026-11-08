@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.AppHost", "sub\g
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.AppHost.ServiceDefaults", "sub\geta-foundation-core\src\Foundation.AppHost.ServiceDefaults\Foundation.AppHost.ServiceDefaults.csproj", "{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geta.Optimizely.Tags.Tests", "tests\Geta.Optimizely.Tags.Tests\Geta.Optimizely.Tags.Tests.csproj", "{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +45,10 @@ Global
 		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,6 +57,7 @@ Global
 		{A5D82359-7825-4BEF-BBDB-B4B540492699} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
 		{65E287B6-1439-4F5D-9733-051153FAC33C} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
 		{C9E8EE69-4802-4D7B-B0A5-8382A9C9F0C2} = {A8A926D7-1ECE-45B9-9B74-C3D65767480D}
+		{511C1C57-2A43-49EB-B3F7-DC03DE4C65E0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BCDEB1D3-2DDF-4C99-9323-4EF8C50C2AC5}

@@ -27,11 +27,11 @@ jobs:
       - name: Release
         run: |
           echo "${env:VERSION}"
-          dotnet build src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}}
+          dotnet build tests/Geta.Optimizely.Tags.Tests/Geta.Optimizely.Tags.Tests.csproj --configuration Release /p:Version=${{env.VERSION}}
       - name: Test
-        run: dotnet test src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build
+        run: dotnet test tests/Geta.Optimizely.Tags.Tests/Geta.Optimizely.Tags.Tests.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build --filter Category!=Integration
       - name: Pack
-        run: dotnet pack src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --output .
+        run: dotnet pack src/Geta.Optimizely.Tags/Geta.Optimizely.Tags.csproj --configuration Release /p:Version=${{env.VERSION}} --no-build --output .
       - name: Push
         run: |
           dotnet nuget push Geta.Optimizely.Tags.${{env.VERSION}}.nupkg --source https://nuget.pkg.github.com/Geta/index.json --api-key ${{env.GITHUB_TOKEN}}

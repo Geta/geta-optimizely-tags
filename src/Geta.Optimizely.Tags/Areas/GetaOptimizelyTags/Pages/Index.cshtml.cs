@@ -56,8 +56,13 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
 
         public IActionResult OnPostEdit(string id)
         {
-            EditItemId = id;
             var tag = _tagRepository.GetTagById(Identity.Parse(id));
+            if (tag == null)
+            {
+                return RedirectToCurrentPage();
+            }
+
+            EditItemId = id;
             Tag = ToEditModel(tag);
             Load();
             return Page();
@@ -75,7 +80,7 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
 
             if (existingTag == null)
             {
-                return RedirectToPage();
+                return RedirectToCurrentPage();
             }
 
             if (Tag.CheckedEditContentTags)
@@ -87,7 +92,7 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
             existingTag.GroupKey = Tag.GroupKey;
             _tagRepository.Save(existingTag);
 
-            return RedirectToPage();
+            return RedirectToCurrentPage();
         }
 
         public IActionResult OnPostDelete(string id)
@@ -99,22 +104,18 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
                 _tagRepository.Delete(existingTag);
             }
 
-            return RedirectToPage();
+            return RedirectToCurrentPage();
+        }
+
+        private IActionResult RedirectToCurrentPage()
+        {
+            // Keep the pager and search state, so editing on page 2 or in search results returns to the same list.
+            return RedirectToPage(new { pageNumber = Paging.PageNumber, q = Query });
         }
 
         private void Load()
         {
-            SetPageNumberFromQueryString();
-
-            var items = FindTags().ToPagedList(Paging.PageNumber, Paging.PageSize);
-            Items = items;
-        }
-        private void SetPageNumberFromQueryString()
-        {
-            if (HttpContext.Request.Query.TryGetValue("pageNumber", out var value) && int.TryParse(value, out var pageNumber))
-            {
-                Paging.PageNumber = pageNumber == 0 ? 1 : pageNumber;
-            }
+            Items = FindTags().ToPagedList(Math.Max(Paging.PageNumber, 1), Paging.PageSize);
         }
 
         private IEnumerable<Tag> FindTags()

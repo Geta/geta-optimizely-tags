@@ -35,7 +35,7 @@ namespace Geta.Optimizely.Tags.Core.Events
         private void OnContentExporting(ITransferContext transferContext, ContentExportingEventArgs e)
         {
             var tagsExporter = _tagsExporterFactory();
-            tagsExporter.AddTagsToExport(transferContext);
+            tagsExporter.AddTagsToExport(transferContext, e.ContentLink);
         }
 
         private void OnPublishedContent(object sender, ContentEventArgs e)

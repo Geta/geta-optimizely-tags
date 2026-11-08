@@ -10,12 +10,18 @@ using EPiServer.DataAbstraction;
 using EPiServer.PlugIn;
 using EPiServer.Scheduler;
 using Geta.Optimizely.Tags.Core;
-using Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags.Models;
-using X.PagedList;
 
 namespace Geta.Optimizely.Tags
 {
-    [ScheduledPlugIn(DisplayName = "Geta Tags maintenance", DefaultEnabled = true)]
+    /// <summary>
+    /// Re-synchronizes the tag store with the tag properties of the content it references: every content item linked
+    /// from a tag is re-read (in all of its languages) and its links are added to or removed from tags so that they match
+    /// the tags the content actually has. Deleted content is unlinked from all tags. The job never changes content.
+    /// </summary>
+    [ScheduledPlugIn(
+        DisplayName = "Geta Tags maintenance",
+        Description = "Synchronizes the tag store with the tags used by content: removes links to deleted content and to tags that are no longer used by the content.",
+        DefaultEnabled = true)]
     public class TagsScheduledJob : ScheduledJobBase
     {
         private bool _stop;
@@ -37,138 +43,116 @@ namespace Geta.Optimizely.Tags
 
         public override string Execute()
         {
-            var tags = _tagService.GetAllTags().ToList();
-            SetTagPageNumber(tags.ToPagedList());
-            var contentGuids = GetTaggedContentGuids(tags);
+            _stop = false;
 
-            foreach (var contentGuid in contentGuids)
+            // All changes are made to this single set of tag instances and saved once at the end, so a tag that is
+            // touched for several content items is never overwritten with a stale copy.
+            var tags = _tagService.GetAllTags().ToList();
+            var tagsByKey = tags
+                .Where(tag => tag?.Name != null)
+                .GroupBy(tag => TagKey(tag.GroupKey, tag.Name), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
+            var tagsByContent = tags
+                .Where(tag => tag?.PermanentLinks != null)
+                .SelectMany(tag => tag.PermanentLinks.Distinct().Select(contentGuid => (contentGuid, tag)))
+                .ToLookup(link => link.contentGuid, link => link.tag);
+
+            var changedTags = new HashSet<Tag>(ReferenceEqualityComparer.Instance);
+
+            foreach (var linkedTags in tagsByContent)
             {
                 if (_stop)
                 {
-                    return "Geta Tags maintenance was stopped";
+                    SaveTags(changedTags);
+                    return $"Geta Tags maintenance was stopped after updating {changedTags.Count} tag(s)";
                 }
 
-                IContent content = null;
+                var contentGuid = linkedTags.Key;
+                var expectedTags = GetExpectedTags(contentGuid, tagsByKey);
 
-                try
+                foreach (var tag in linkedTags.Where(tag => !expectedTags.Contains(tag)))
                 {
-                    var contentReference = TagsHelper.GetContentReference(contentGuid);
-
-                    if (!ContentReference.IsNullOrEmpty(contentReference))
-                    {
-                        content = _contentLoader.Get<IContent>(contentReference);
-                    }
+                    tag.PermanentLinks.Remove(contentGuid);
+                    changedTags.Add(tag);
                 }
-                catch (ContentNotFoundException)
+
+                foreach (var tag in expectedTags.Except(linkedTags))
                 {
-                    // Ignore if not found
+                    tag.PermanentLinks ??= new List<Guid>();
+                    tag.PermanentLinks.Add(contentGuid);
+                    changedTags.Add(tag);
                 }
-
-                if (content == null || (content is PageData data && data.IsDeleted))
-                {
-                    RemoveFromTags(contentGuid, tags);
-                    continue;
-                }
-
-                CheckContentProperties(content, tags);
             }
 
-            return "Geta Tags maintenance completed successfully";
+            SaveTags(changedTags);
+
+            return $"Geta Tags maintenance completed: checked {tagsByContent.Count} content item(s), updated {changedTags.Count} tag(s)";
         }
 
-        private void CheckContentProperties(IContent content, IList<Tag> tags)
+        /// <summary>
+        /// Returns the tags the content should be linked to, based on the tag properties of all its language versions.
+        /// Tags that the content uses but that are missing from the tag store (for example deleted in the admin UI) are
+        /// created, the same way publishing the content would.
+        /// </summary>
+        private HashSet<Tag> GetExpectedTags(Guid contentGuid, Dictionary<string, List<Tag>> tagsByKey)
         {
+            var expectedTags = new HashSet<Tag>(ReferenceEqualityComparer.Instance);
+            var content = LoadContent(contentGuid);
+
+            if (content == null || content.IsDeleted)
+            {
+                return expectedTags;
+            }
+
             var contentType = _contentTypeRepository.Load(content.ContentTypeID);
 
-            var tagProperties = contentType.PropertyDefinitions
-                .Where(TagsHelper.IsTagProperty);
-
-            var contentTagNames = tagProperties
-                .Select(propertyDefinition => GetTagNames(content, propertyDefinition))
-                .Where(tagNames => !string.IsNullOrEmpty(tagNames));
-
-            var contentTags = contentTagNames
-                .SelectMany(ParseTags)
-                .Distinct()
-                .ToList();
-
-            // make sure the tags it has added has the ContentReference
-            ValidateTags(content.ContentGuid, contentTags);
-
-            // make sure there's no ContentReference to this ContentReference in the rest of the tags
-            RemoveFromTags(content.ContentGuid, tags.Except(contentTags));
-        }
-
-        private string GetTagNames(IContent content, PropertyDefinition propertyDefinition)
-        {
-            if (content is ILocalizable)
+            foreach (var version in GetLanguageVersions(content))
             {
-                return GetAllLanguageTagNames(content, propertyDefinition);
+                foreach (var (groupKey, names) in ContentTags.GetTagsByGroupKey(version, contentType))
+                {
+                    foreach (var name in names)
+                    {
+                        var key = TagKey(groupKey, name);
+                        if (!tagsByKey.TryGetValue(key, out var matchingTags))
+                        {
+                            matchingTags = new List<Tag> { new() { Name = name, GroupKey = groupKey } };
+                            tagsByKey.Add(key, matchingTags);
+                        }
+
+                        expectedTags.UnionWith(matchingTags);
+                    }
+                }
             }
 
-            return ((ContentData)content)[propertyDefinition.Name] as string;
+            return expectedTags;
         }
 
-        private string GetAllLanguageTagNames(IContent localizableContent, PropertyDefinition tagPropertyDefinition)
+        private IContent LoadContent(Guid contentGuid)
         {
-            var localizable = (ILocalizable)localizableContent;
-            var tags = localizable
-                .ExistingLanguages
-                .Select(language => _contentLoader.Get<IContent>(localizableContent.ContentGuid, language))
-                .Select(x => ((ContentData)x)[tagPropertyDefinition.Name] as string);
-            return string.Join(",", tags);
+            return _contentLoader.TryGet<IContent>(contentGuid, out var content) ? content : null;
         }
 
-        private static IEnumerable<Guid> GetTaggedContentGuids(IEnumerable<Tag> tags)
+        private IEnumerable<IContent> GetLanguageVersions(IContent content)
         {
-            return tags.Where(x => x?.PermanentLinks != null)
-                .SelectMany(x => x.PermanentLinks)
-                .Distinct()
-                .ToList();
-        }
-
-        private IEnumerable<Tag> ParseTags(string tagNames)
-        {
-            return tagNames.Split(',')
-                .SelectMany(_tagService.GetTagsByName)
-                .Where(tag => tag != null)
-                .ToList();
-        }
-
-        private void ValidateTags(Guid contentGuid, IEnumerable<Tag> addedTags)
-        {
-            foreach (var addedTag in addedTags)
+            if (content is not ILocalizable localizable)
             {
-                if (addedTag.PermanentLinks.Contains(contentGuid)) continue;
-
-                addedTag.PermanentLinks.Add(contentGuid);
-
-                _tagService.Save(addedTag);
+                return new[] { content };
             }
+
+            return localizable.ExistingLanguages
+                .Select(language => _contentLoader.TryGet<IContent>(content.ContentGuid, language, out var version) ? version : null)
+                .Where(version => version != null);
         }
 
-        private void RemoveFromTags(Guid guid, IEnumerable<Tag> tags)
+        private void SaveTags(IEnumerable<Tag> tags)
         {
             foreach (var tag in tags)
             {
-                if (tag.PermanentLinks == null || !tag.PermanentLinks.Contains(guid)) continue;
-
-                tag.PermanentLinks.Remove(guid);
-
                 _tagService.Save(tag);
             }
         }
 
-        private void SetTagPageNumber(IPagedList<Tag> items)
-        {
-            for (var i = 0; i < items.Count; i++)
-            {
-                var itemPageNumber = (i / Paging.PageSize) + 1;
-                var tag = _tagService.GetTagById(items[i].Id);
-                tag.ItemPageNumber = itemPageNumber;
-                _tagService.Save(tag);
-            }
-        }
+        private static string TagKey(string groupKey, string name) => $"{groupKey}\n{name}";
 
         public override void Stop()
         {

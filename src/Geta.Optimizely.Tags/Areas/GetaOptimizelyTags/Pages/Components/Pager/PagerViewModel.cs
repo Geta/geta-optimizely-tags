@@ -13,7 +13,8 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags.Components.Pager
         public string PageUrl(int page)
         {
             var qs = HttpUtility.ParseQueryString(QueryString);
-            qs["page"] = page.ToString();
+            qs.Remove("id");
+            qs["pageNumber"] = page.ToString();
             return $"?{qs}";
         }
     }
