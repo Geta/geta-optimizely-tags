@@ -50,7 +50,7 @@ namespace Geta.Optimizely.Tags
 
         /// <summary>
         /// Merges the tags into the repository: content links are added to an existing tag with the same name and
-        /// group key, otherwise a new tag is created.
+        /// group key, otherwise a new tag is created. Returns the number of tags that were created or got new links.
         /// </summary>
         internal static int Import(IEnumerable<Tag> legacyTags, ITagRepository tagRepository)
         {
@@ -58,17 +58,25 @@ namespace Geta.Optimizely.Tags
 
             foreach (var legacyTag in legacyTags.Where(tag => !string.IsNullOrEmpty(tag.Name)))
             {
-                var tag = tagRepository.GetTagByNameAndGroup(legacyTag.Name, legacyTag.GroupKey)
-                          ?? new Tag
-                          {
-                              Name = legacyTag.Name,
-                              GroupKey = legacyTag.GroupKey,
-                              Slug = legacyTag.Slug,
-                              Description = legacyTag.Description
-                          };
+                var tag = tagRepository.GetTagByNameAndGroup(legacyTag.Name, legacyTag.GroupKey);
+                var isNew = tag == null;
+                tag ??= new Tag
+                {
+                    Name = legacyTag.Name,
+                    GroupKey = legacyTag.GroupKey,
+                    Slug = legacyTag.Slug,
+                    Description = legacyTag.Description
+                };
 
                 tag.PermanentLinks ??= new List<Guid>();
-                foreach (var contentGuid in legacyTag.PermanentLinks.Except(tag.PermanentLinks).ToList())
+                var missingLinks = legacyTag.PermanentLinks.Except(tag.PermanentLinks).ToList();
+                if (!isNew && missingLinks.Count == 0)
+                {
+                    // Already imported, for example by an earlier run.
+                    continue;
+                }
+
+                foreach (var contentGuid in missingLinks)
                 {
                     tag.PermanentLinks.Add(contentGuid);
                 }

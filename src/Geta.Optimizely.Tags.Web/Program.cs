@@ -14,9 +14,9 @@ Host.CreateDefaultBuilder(args)
     .Run();
 
 // The content root is the Foundation project, so its appsettings.json (including its own Optimizely Graph keys) is
-// loaded instead of this project's. Layer this project's Optimizely:ContentGraph section on top of the appsettings
-// files, so the sandbox runs without Graph credentials by default. Environment variables and the command line still
-// take precedence.
+// loaded instead of this project's. Layer this project's Optimizely:ContentGraph section right on top of that file, so
+// the sandbox runs without Graph credentials by default. appsettings.{Environment}.json (where Foundation says to put
+// real keys), environment variables and the command line still take precedence.
 static void UseSandboxGraphSettings(IConfigurationBuilder config)
 {
     var graphSettings = new ConfigurationBuilder()
@@ -26,6 +26,12 @@ static void UseSandboxGraphSettings(IConfigurationBuilder config)
         .AsEnumerable()
         .Where(setting => setting.Value != null);
 
-    var afterAppSettings = config.Sources.ToList().FindLastIndex(source => source is JsonConfigurationSource) + 1;
-    config.Sources.Insert(afterAppSettings, new MemoryConfigurationSource { InitialData = graphSettings });
+    var sources = config.Sources.ToList();
+    var appSettings = sources.FindIndex(source => source is JsonConfigurationSource { Path: "appsettings.json" });
+    if (appSettings < 0)
+    {
+        appSettings = sources.FindLastIndex(source => source is JsonConfigurationSource);
+    }
+
+    config.Sources.Insert(appSettings + 1, new MemoryConfigurationSource { InitialData = graphSettings });
 }

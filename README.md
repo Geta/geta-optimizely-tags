@@ -122,12 +122,16 @@ tag links to, the job reads the tag properties of all its language versions and 
 The job never changes content. That has two consequences:
 
 - Deleting a tag in the admin UI removes it from the tag store, but not from content. Content that still uses the tag
-  creates it again the next time the content is published or the job runs. To remove a tag everywhere, remove it from
-  the content.
-- Renaming a tag in the admin UI only renames the stored tag, unless you tick *Check this box to edit existing tags in
-  the content*, which also updates and republishes the content that uses it.
+  creates it again the next time the content is published, or when the job runs if the content is still linked to
+  another tag. To remove a tag everywhere, remove it from the content.
+- Renaming a tag in the admin UI without ticking *Check this box to edit existing tags in the content* only renames the
+  stored tag. Content that still uses the old name links to it again when the content is published or the job runs,
+  which re-creates the old tag and unlinks the renamed one. Tick the box to also update and republish the content that
+  uses the tag.
 
-Tags are also kept in sync on every publish, so the job is mainly needed after imports, bulk changes or upgrades.
+Tags are also kept in sync on every publish, so the job is mainly needed after imports, bulk changes or upgrades, and
+after changing the group key of a tag property or removing a tag property: publishing only updates the groups of the
+content's current tag properties.
 
 ## Upgrading from Geta.Tags (CMS 11)
 

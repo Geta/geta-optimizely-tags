@@ -44,12 +44,9 @@
                 });
 
                 this._getTagList().sortable({
-                    stop: function (event, ui) {
-                        var list = $(event.target);
-                        var value = this._getTagValues(list);
-                        $(this._tagWidget).val(value);
-                        this._set("value", value);
-                        this.onChange(value);
+                    stop: function () {
+                        this._tagWidget.val(this._getTagValues(this._getTagList()));
+                        this._onTagsChanged();
                     }.bind(this)
                 });
             },

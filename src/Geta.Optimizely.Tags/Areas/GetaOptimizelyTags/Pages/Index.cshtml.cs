@@ -89,7 +89,14 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
             }
 
             existingTag.Name = Tag.Name;
-            existingTag.GroupKey = Tag.GroupKey;
+            // An empty field is bound as null, but publishing stores and looks up tags without a group key under "", and
+            // the tag store does not match null with "". Keep a group key that is already null, though: saving it as ""
+            // would overwrite a tag with the same name that is stored under "".
+            if (Tag.GroupKey != null || existingTag.GroupKey != null)
+            {
+                existingTag.GroupKey = Tag.GroupKey ?? string.Empty;
+            }
+
             _tagRepository.Save(existingTag);
 
             return RedirectToCurrentPage();
@@ -115,7 +122,13 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
 
         private void Load()
         {
-            Items = FindTags().ToPagedList(Math.Max(Paging.PageNumber, 1), Paging.PageSize);
+            var tags = FindTags().ToList();
+
+            // Stay on a page that exists, for example after deleting the only tag on the last page.
+            var pageCount = Math.Max(1, (tags.Count + Paging.PageSize - 1) / Paging.PageSize);
+            Paging.PageNumber = Math.Clamp(Paging.PageNumber, 1, pageCount);
+
+            Items = tags.ToPagedList(Paging.PageNumber, Paging.PageSize);
         }
 
         private IEnumerable<Tag> FindTags()

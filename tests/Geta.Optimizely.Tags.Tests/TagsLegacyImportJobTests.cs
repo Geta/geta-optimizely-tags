@@ -67,8 +67,9 @@ public class TagsLegacyImportJobTests
         var legacy = new[] { new Tag { Name = "alpha", GroupKey = "en", PermanentLinks = new List<Guid> { link } } };
 
         TagsLegacyImportJob.Import(legacy, _repository);
-        TagsLegacyImportJob.Import(legacy, _repository);
+        var secondRunCount = TagsLegacyImportJob.Import(legacy, _repository);
 
+        Assert.Equal(0, secondRunCount);
         Assert.Single(_repository.Stored);
         Assert.Equal(new[] { link }, _repository.Find("alpha", "en").PermanentLinks);
     }

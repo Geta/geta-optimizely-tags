@@ -119,6 +119,12 @@ namespace Geta.Optimizely.Tags.Core
                 contentType,
                 cultureSpecificOnly: !ContentTags.IsMasterLanguageVersion(content));
 
+            if (tagsByGroupKey.Count == 0)
+            {
+                // No tag properties for this version, so there are no tags to link or unlink.
+                return;
+            }
+
             RemoveOldContentTags(content.ContentGuid, tagsByGroupKey);
 
             foreach (var (groupKey, names) in tagsByGroupKey)
@@ -140,8 +146,16 @@ namespace Geta.Optimizely.Tags.Core
                     continue;
                 }
 
-                tag.PermanentLinks.Remove(contentGuid);
-                Save(tag);
+                // Save writes to the stored tag found by name and group key. Remove the link from that tag, so a
+                // duplicate of the tag never overwrites the links of the tag it duplicates.
+                var storedTag = GetTagByNameAndGroup(tag.Name, tag.GroupKey);
+                if (storedTag?.PermanentLinks == null || !storedTag.PermanentLinks.Contains(contentGuid))
+                {
+                    continue;
+                }
+
+                storedTag.PermanentLinks = storedTag.PermanentLinks.Where(link => link != contentGuid).ToList();
+                Save(storedTag);
             }
         }
     }

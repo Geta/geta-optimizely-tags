@@ -20,7 +20,7 @@ namespace Geta.Optimizely.Tags
     /// </summary>
     [ScheduledPlugIn(
         DisplayName = "Geta Tags maintenance",
-        Description = "Synchronizes the tag store with the tags used by content: removes links to deleted content and to tags that are no longer used by the content.",
+        Description = "Synchronizes the tag store with the tags used by content: adds missing links, re-creates tags that content still uses, and removes links to deleted content and to tags that are no longer used by the content.",
         DefaultEnabled = true)]
     public class TagsScheduledJob : ScheduledJobBase
     {
@@ -45,49 +45,66 @@ namespace Geta.Optimizely.Tags
         {
             _stop = false;
 
-            // All changes are made to this single set of tag instances and saved once at the end, so a tag that is
-            // touched for several content items is never overwritten with a stale copy.
+            // The links are worked out against this single snapshot of the tags. Only the links that change are saved,
+            // regularly and to a fresh copy of each tag, so links that publishing changes while the job runs are kept.
             var tags = _tagService.GetAllTags().ToList();
             var tagsByKey = tags
                 .Where(tag => tag?.Name != null)
                 .GroupBy(tag => TagKey(tag.GroupKey, tag.Name), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
             var tagsByContent = tags
-                .Where(tag => tag?.PermanentLinks != null)
+                .Where(tag => !string.IsNullOrEmpty(tag?.Name) && tag.PermanentLinks != null)
                 .SelectMany(tag => tag.PermanentLinks.Distinct().Select(contentGuid => (contentGuid, tag)))
                 .ToLookup(link => link.contentGuid, link => link.tag);
 
-            var changedTags = new HashSet<Tag>(ReferenceEqualityComparer.Instance);
+            var changes = new Dictionary<Tag, LinkChanges>(ReferenceEqualityComparer.Instance);
+            var checkedContent = 0;
+            var changedLinks = 0;
 
-            foreach (var linkedTags in tagsByContent)
+            try
             {
-                if (_stop)
+                foreach (var linkedTags in tagsByContent)
                 {
-                    SaveTags(changedTags);
-                    return $"Geta Tags maintenance was stopped after updating {changedTags.Count} tag(s)";
-                }
+                    if (_stop)
+                    {
+                        return $"Geta Tags maintenance was stopped after checking {checkedContent} content item(s)";
+                    }
 
-                var contentGuid = linkedTags.Key;
-                var expectedTags = GetExpectedTags(contentGuid, tagsByKey);
+                    var contentGuid = linkedTags.Key;
+                    var expectedTags = GetExpectedTags(contentGuid, tagsByKey);
 
-                foreach (var tag in linkedTags.Where(tag => !expectedTags.Contains(tag)))
-                {
-                    tag.PermanentLinks.Remove(contentGuid);
-                    changedTags.Add(tag);
-                }
+                    foreach (var tag in linkedTags.Where(tag => !expectedTags.Contains(tag)))
+                    {
+                        GetChanges(changes, tag).Removed.Add(contentGuid);
+                    }
 
-                foreach (var tag in expectedTags.Except(linkedTags))
-                {
-                    tag.PermanentLinks ??= new List<Guid>();
-                    tag.PermanentLinks.Add(contentGuid);
-                    changedTags.Add(tag);
+                    // Tag.Equals only compares names, so compare instances: the same name can be used in several groups.
+                    foreach (var tag in expectedTags.Except<Tag>(linkedTags, ReferenceEqualityComparer.Instance))
+                    {
+                        GetChanges(changes, tag).Added.Add(contentGuid);
+                    }
+
+                    // Save regularly rather than once at the end, so a change worked out for a content item cannot undo
+                    // a later publish of that content item for long.
+                    if (++checkedContent % SaveInterval == 0)
+                    {
+                        changedLinks += SaveChanges(changes);
+                    }
                 }
             }
+            finally
+            {
+                // Keep the progress made so far, also when the job is stopped or fails on a content item.
+                changedLinks += SaveChanges(changes);
+            }
 
-            SaveTags(changedTags);
-
-            return $"Geta Tags maintenance completed: checked {tagsByContent.Count} content item(s), updated {changedTags.Count} tag(s)";
+            return $"Geta Tags maintenance completed: checked {checkedContent} content item(s), changed {changedLinks} link(s)";
         }
+
+        /// <summary>
+        /// The number of content items to check between saving the link changes.
+        /// </summary>
+        internal int SaveInterval { get; set; } = 100;
 
         /// <summary>
         /// Returns the tags the content should be linked to, based on the tag properties of all its language versions.
@@ -144,12 +161,62 @@ namespace Geta.Optimizely.Tags
                 .Where(version => version != null);
         }
 
-        private void SaveTags(IEnumerable<Tag> tags)
+        private static LinkChanges GetChanges(Dictionary<Tag, LinkChanges> changes, Tag tag)
         {
-            foreach (var tag in tags)
+            if (!changes.TryGetValue(tag, out var tagChanges))
             {
-                _tagService.Save(tag);
+                tagChanges = new LinkChanges();
+                changes.Add(tag, tagChanges);
             }
+
+            return tagChanges;
+        }
+
+        /// <summary>
+        /// Applies the link changes to the tags as they are stored now, not to the snapshot, so links that publishing
+        /// changed for other content while the job was running are kept, and clears the changes. A tag is re-read by
+        /// name and group key, because that is the stored tag <see cref="ITagService.Save(Tag)"/> writes to. Removals are
+        /// applied before additions, so a link that moves between two tags that are stored as one (for example names
+        /// that only differ in a way the database collation ignores) is kept.
+        /// </summary>
+        /// <returns>The number of links that were added or removed.</returns>
+        private int SaveChanges(Dictionary<Tag, LinkChanges> changes)
+        {
+            var changedLinks = 0;
+
+            foreach (var (tag, tagChanges) in changes.Where(change => change.Value.Removed.Count > 0))
+            {
+                var current = _tagService.GetTagByNameAndGroup(tag.Name, tag.GroupKey);
+                var removed = current?.PermanentLinks?.Count(tagChanges.Removed.Contains) ?? 0;
+                if (removed == 0)
+                {
+                    continue;
+                }
+
+                current.PermanentLinks = current.PermanentLinks.Where(link => !tagChanges.Removed.Contains(link)).ToList();
+                _tagService.Save(current);
+                changedLinks += removed;
+            }
+
+            foreach (var (tag, tagChanges) in changes.Where(change => change.Value.Added.Count > 0))
+            {
+                var current = _tagService.GetTagByNameAndGroup(tag.Name, tag.GroupKey)
+                              ?? new Tag { Name = tag.Name, GroupKey = tag.GroupKey };
+                var links = current.PermanentLinks?.ToList() ?? new List<Guid>();
+                var missing = tagChanges.Added.Where(link => !links.Contains(link)).ToList();
+                if (missing.Count == 0)
+                {
+                    continue;
+                }
+
+                links.AddRange(missing);
+                current.PermanentLinks = links;
+                _tagService.Save(current);
+                changedLinks += missing.Count;
+            }
+
+            changes.Clear();
+            return changedLinks;
         }
 
         private static string TagKey(string groupKey, string name) => $"{groupKey}\n{name}";
@@ -157,6 +224,13 @@ namespace Geta.Optimizely.Tags
         public override void Stop()
         {
             _stop = true;
+        }
+
+        private sealed class LinkChanges
+        {
+            public HashSet<Guid> Added { get; } = new();
+
+            public HashSet<Guid> Removed { get; } = new();
         }
     }
 }

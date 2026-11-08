@@ -15,13 +15,13 @@ public class TagsScheduledJobTests
 {
     private readonly InMemoryTagRepository _repository = new();
     private readonly IContentLoader _contentLoader = Substitute.For<IContentLoader>();
+    private readonly IContentTypeRepository _contentTypeRepository = Substitute.For<IContentTypeRepository>();
     private readonly Dictionary<Guid, TestContent> _contents = new();
     private readonly TagsScheduledJob _job;
 
     public TagsScheduledJobTests()
     {
-        var contentTypeRepository = Substitute.For<IContentTypeRepository>();
-        contentTypeRepository.Load(TestContent.TypeId).Returns(TestContent.CreateContentType());
+        _contentTypeRepository.Load(TestContent.TypeId).Returns(TestContent.CreateContentType());
 
         _contentLoader.TryGet(Arg.Any<Guid>(), out Arg.Any<IContent>()).Returns(call =>
         {
@@ -36,7 +36,7 @@ public class TagsScheduledJobTests
             return found;
         });
 
-        _job = new TagsScheduledJob(contentTypeRepository, new TagService(_repository, contentTypeRepository), _contentLoader);
+        _job = new TagsScheduledJob(_contentTypeRepository, new TagService(_repository, _contentTypeRepository), _contentLoader);
     }
 
     private TestContent AddContent(string property, string tags)
@@ -112,6 +112,87 @@ public class TagsScheduledJobTests
         _job.Execute();
 
         Assert.Contains(content.ContentGuid, _repository.Find("deleted-in-admin", "ArticleTags").PermanentLinks);
+    }
+
+    [Fact]
+    public void Execute_links_the_same_tag_name_in_each_group_the_content_uses()
+    {
+        // Tag.Equals only compares names, so the link to news/ArticleTags must not be skipped because news/en is linked.
+        var content = AddContent(nameof(TestContent.Tags), "news").With(nameof(TestContent.ArticleTags), "news");
+        _repository.Add("news", "en", content.ContentGuid);
+        _repository.Add("news", "ArticleTags");
+
+        _job.Execute();
+
+        Assert.Contains(content.ContentGuid, _repository.Find("news", "en").PermanentLinks);
+        Assert.Contains(content.ContentGuid, _repository.Find("news", "ArticleTags").PermanentLinks);
+    }
+
+    [Fact]
+    public void Execute_moves_links_to_the_current_group_key()
+    {
+        // For example after upgrading, when the content was linked under a group key that is no longer used.
+        var content = AddContent(nameof(TestContent.ArticleTags), "alpha");
+        _repository.Add("alpha", "ArticleTagssv", content.ContentGuid);
+
+        _job.Execute();
+
+        Assert.Empty(_repository.Find("alpha", "ArticleTagssv").PermanentLinks);
+        Assert.Contains(content.ContentGuid, _repository.Find("alpha", "ArticleTags").PermanentLinks);
+    }
+
+    [Fact]
+    public void Execute_removes_every_copy_of_a_link()
+    {
+        var content = AddContent(nameof(TestContent.Tags), "alpha");
+        _repository.Add("alpha", "en", content.ContentGuid);
+        _repository.Add("beta", "en", content.ContentGuid, content.ContentGuid);
+
+        _job.Execute();
+
+        Assert.Empty(_repository.Find("beta", "en").PermanentLinks);
+    }
+
+    [Fact]
+    public void Execute_keeps_links_that_are_published_while_the_job_runs()
+    {
+        var deleted = Guid.NewGuid();
+        var published = new TestContent(Guid.NewGuid()).With(nameof(TestContent.Tags), "alpha");
+        _repository.Add("alpha", "en", deleted);
+        var tagService = new TagService(_repository, _contentTypeRepository);
+        _contentLoader.TryGet(deleted, out Arg.Any<IContent>()).Returns(_ =>
+        {
+            // An editor publishes another page with the same tag while the job is loading the content.
+            tagService.UpdateContentTags(published);
+            return false;
+        });
+
+        _job.Execute();
+
+        Assert.Equal(new[] { published.ContentGuid }, _repository.Find("alpha", "en").PermanentLinks);
+    }
+
+    [Fact]
+    public void Execute_does_not_undo_a_publish_of_content_it_has_already_checked()
+    {
+        _job.SaveInterval = 1;
+        var page = AddContent(nameof(TestContent.Tags), "x,y");
+        _repository.Add("y", "en", page.ContentGuid);
+        var other = AddContent(nameof(TestContent.Tags), "z");
+        _repository.Add("z", "en", other.ContentGuid);
+        var tagService = new TagService(_repository, _contentTypeRepository);
+        _contentLoader.TryGet(other.ContentGuid, out Arg.Any<IContent>()).Returns(call =>
+        {
+            // After the job checked the page and linked it to "x", an editor removes "x" from the page and publishes.
+            tagService.UpdateContentTags(page.With(nameof(TestContent.Tags), "y"));
+            call[1] = other;
+            return true;
+        });
+
+        _job.Execute();
+
+        Assert.DoesNotContain(page.ContentGuid, _repository.Find("x", "en").PermanentLinks);
+        Assert.Contains(page.ContentGuid, _repository.Find("y", "en").PermanentLinks);
     }
 
     [Fact]

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.1.0]
 
-- Fixed content export failing with a `NullReferenceException` in `TagsExporter.AddTagsToExport`; the tags linked to the exported content are now added to the export package ([#34](https://github.com/Geta/geta-optimizely-tags/issues/34))
+- Fixed content export failing with a `NullReferenceException` in `TagsExporter.AddTagsToExport`; tags are no longer added to the export package, because importing the content publishes it and links it to its tags, creating the tags that are missing ([#34](https://github.com/Geta/geta-optimizely-tags/issues/34))
 - Fixed removed tags staying linked to content: publishing now unlinks removed tags for properties with `[TagsGroupKey]`, and removing a tag in the editor is now saved ([#20](https://github.com/Geta/geta-optimizely-tags/issues/20))
 - Fixed the tags editor showing stale or empty tags after the CMS sets the value, for example after publishing a property in the page header ([#14](https://github.com/Geta/geta-optimizely-tags/issues/14))
 - Fixed the maintenance job linking content to same-named tags in other groups and overwriting links added earlier in the same run; it now synchronizes tags per group across all language versions, and no longer re-saves every tag on each run ([#19](https://github.com/Geta/geta-optimizely-tags/issues/19), [#28](https://github.com/Geta/geta-optimizely-tags/issues/28))

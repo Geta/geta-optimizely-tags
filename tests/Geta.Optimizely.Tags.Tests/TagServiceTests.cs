@@ -87,6 +87,18 @@ public class TagServiceTests
     }
 
     [Fact]
+    public void UpdateContentTags_does_not_read_the_tag_store_for_content_without_tag_properties()
+    {
+        var repository = Substitute.For<ITagRepository>();
+        var contentTypeRepository = Substitute.For<IContentTypeRepository>();
+        contentTypeRepository.Load(7).Returns(new ContentType { ID = 7, ModelType = typeof(TestContent) });
+
+        new TagService(repository, contentTypeRepository).UpdateContentTags(new TestContent(Guid.NewGuid()) { ContentTypeID = 7 });
+
+        repository.DidNotReceive().GetTagsByContent(Arg.Any<Guid>());
+    }
+
+    [Fact]
     public void UpdateContentTags_keeps_a_tag_used_by_two_properties_with_the_same_group_key()
     {
         var content = new TestContent(Guid.NewGuid())

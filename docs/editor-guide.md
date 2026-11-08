@@ -12,7 +12,7 @@ In the text field, type a tag and press *Enter*. After pressing *Enter*, the tag
 
 In the Admin mode, Geta Tags management is available on the top menu. The management view provides ability to search, modify and delete a tag. The list keeps your current page and search when you edit, update or delete a tag.
 
-Deleting a tag here does not remove it from content: content that still uses the tag adds it back when it is published. To rename a tag in the content as well, tick *Check this box to edit existing tags in the content* when updating it.
+Deleting a tag here does not remove it from content: content that still uses the tag adds it back when it is published. Renaming a tag likewise only renames the stored tag: content that still uses the old name adds the old tag back when it is published. To rename a tag in the content as well, tick *Check this box to edit existing tags in the content* when updating it.
 
 ![Tags management](images/tags-management.PNG)
 
