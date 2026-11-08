@@ -90,12 +90,14 @@ namespace Geta.Optimizely.Tags
 
         internal static Tag ToTag(PropertyBag bag)
         {
+            string Text(string key) => bag.TryGetValue(key, out var value) ? value as string : null;
+
             return new Tag
             {
-                Name = bag.TryGetValue("Name", out var name) ? name as string : null,
-                GroupKey = bag.TryGetValue("GroupKey", out var groupKey) ? groupKey as string ?? string.Empty : string.Empty,
-                Slug = bag.TryGetValue("Slug", out var slug) ? slug as string : null,
-                Description = bag.TryGetValue("Description", out var description) ? description as string : null,
+                Name = Text("Name"),
+                GroupKey = Text("GroupKey") ?? string.Empty,
+                Slug = Text("Slug"),
+                Description = Text("Description"),
                 PermanentLinks = bag.TryGetValue("PermanentLinks", out var links) ? ToGuids(links) : new List<Guid>()
             };
         }

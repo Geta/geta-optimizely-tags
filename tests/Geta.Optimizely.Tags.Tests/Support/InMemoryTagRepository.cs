@@ -7,8 +7,9 @@ using Geta.Optimizely.Tags.Core;
 namespace Geta.Optimizely.Tags.Tests.Support;
 
 /// <summary>
-/// Tag repository that behaves like the dynamic data store: every load returns new instances, and saving a tag
-/// matches an existing tag by name and group key (case-insensitively, like the default SQL collation).
+/// Tag repository that behaves like <see cref="TagRepository"/> on the dynamic data store: every load returns new
+/// instances, a loaded tag is saved to its own row, and a new tag is merged into the tag with the same name and group
+/// key (case-insensitively, like the default SQL collation).
 /// </summary>
 public class InMemoryTagRepository : ITagRepository
 {
@@ -44,9 +45,8 @@ public class InMemoryTagRepository : ITagRepository
             return null;
         }
 
-        // Same rule as TagRepository: a tag with the same name and group key is overwritten.
-        var existing = _tags.FirstOrDefault(t => Same(t.Name, tag.Name) && Same(t.GroupKey, tag.GroupKey));
-        tag.Id = existing?.Id ?? tag.Id ?? Identity.NewIdentity(Guid.NewGuid());
+        tag.Id ??= _tags.FirstOrDefault(t => Same(t.Name, tag.Name) && Same(t.GroupKey, tag.GroupKey))?.Id
+                   ?? Identity.NewIdentity(Guid.NewGuid());
         _tags.RemoveAll(t => t.Id.ExternalId == tag.Id.ExternalId);
         _tags.Add(Copy(tag));
         return tag.Id;

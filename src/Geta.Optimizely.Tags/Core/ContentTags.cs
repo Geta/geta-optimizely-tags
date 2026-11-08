@@ -78,7 +78,7 @@ namespace Geta.Optimizely.Tags.Core
                    || localizable.Language.Equals(localizable.MasterLanguage);
         }
 
-        public static IEnumerable<string> ParseTagNames(string tagNames)
+        private static IEnumerable<string> ParseTagNames(string tagNames)
         {
             return tagNames?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
         }

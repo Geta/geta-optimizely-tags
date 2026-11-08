@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using EPiServer.Data;
 using EPiServer.DataAbstraction;
 using Geta.Optimizely.Tags.Core;
 using Geta.Optimizely.Tags.Tests.Support;
@@ -110,5 +112,22 @@ public class TagServiceTests
 
         Assert.Contains(content.ContentGuid, _repository.Find("shared", "en").PermanentLinks);
         Assert.Single(_repository.Stored, t => t.Name == "shared");
+    }
+
+    [Fact]
+    public void UpdateContentTags_unlinks_a_removed_tag_from_every_stored_copy_of_it()
+    {
+        // The same name and group key can be stored twice, for example by an import. Each copy keeps its own links.
+        var content = new TestContent(Guid.NewGuid()).With(nameof(TestContent.ArticleTags), "alpha");
+        var otherContent = Guid.NewGuid();
+        _repository.Save(new Tag { Id = Identity.NewIdentity(Guid.NewGuid()), Name = "beta", GroupKey = "ArticleTags", PermanentLinks = new List<Guid> { otherContent, content.ContentGuid } });
+        _repository.Save(new Tag { Id = Identity.NewIdentity(Guid.NewGuid()), Name = "beta", GroupKey = "ArticleTags", PermanentLinks = new List<Guid> { content.ContentGuid } });
+
+        _service.UpdateContentTags(content);
+
+        var betas = _repository.Stored.Where(t => t.Name == "beta").ToList();
+        Assert.Equal(2, betas.Count);
+        Assert.All(betas, tag => Assert.DoesNotContain(content.ContentGuid, tag.PermanentLinks));
+        Assert.Contains(betas, tag => tag.PermanentLinks.Contains(otherContent));
     }
 }

@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 - Added a unit test project; the tests run in the CI build and before every release
 - The sandbox now starts without Optimizely Graph credentials, as documented
 - `Tag.ItemPageNumber` is obsolete and no longer set
+- `ITagRepository.Save` now saves a tag that was loaded from the store to that tag, instead of to the first stored tag with the same name and group key; new tags are still merged into an existing tag with the same name and group key. Renaming a tag in the admin UI to a name that is already used in its group no longer overwrites the other tag
+- Publishing no longer re-saves tags that are already linked to the content
 
 ## [3.0.0]
 

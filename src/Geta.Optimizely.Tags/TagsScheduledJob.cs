@@ -47,13 +47,12 @@ namespace Geta.Optimizely.Tags
 
             // The links are worked out against this single snapshot of the tags. Only the links that change are saved,
             // regularly and to a fresh copy of each tag, so links that publishing changes while the job runs are kept.
-            var tags = _tagService.GetAllTags().ToList();
+            var tags = _tagService.GetAllTags().Where(tag => !string.IsNullOrEmpty(tag.Name)).ToList();
             var tagsByKey = tags
-                .Where(tag => tag?.Name != null)
                 .GroupBy(tag => TagKey(tag.GroupKey, tag.Name), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.OrdinalIgnoreCase);
             var tagsByContent = tags
-                .Where(tag => !string.IsNullOrEmpty(tag?.Name) && tag.PermanentLinks != null)
+                .Where(tag => tag.PermanentLinks != null)
                 .SelectMany(tag => tag.PermanentLinks.Distinct().Select(contentGuid => (contentGuid, tag)))
                 .ToLookup(link => link.contentGuid, link => link.tag);
 
@@ -114,9 +113,7 @@ namespace Geta.Optimizely.Tags
         private HashSet<Tag> GetExpectedTags(Guid contentGuid, Dictionary<string, List<Tag>> tagsByKey)
         {
             var expectedTags = new HashSet<Tag>(ReferenceEqualityComparer.Instance);
-            var content = LoadContent(contentGuid);
-
-            if (content == null || content.IsDeleted)
+            if (!_contentLoader.TryGet<IContent>(contentGuid, out var content) || content.IsDeleted)
             {
                 return expectedTags;
             }
@@ -144,11 +141,6 @@ namespace Geta.Optimizely.Tags
             return expectedTags;
         }
 
-        private IContent LoadContent(Guid contentGuid)
-        {
-            return _contentLoader.TryGet<IContent>(contentGuid, out var content) ? content : null;
-        }
-
         private IEnumerable<IContent> GetLanguageVersions(IContent content)
         {
             if (content is not ILocalizable localizable)
@@ -174,10 +166,9 @@ namespace Geta.Optimizely.Tags
 
         /// <summary>
         /// Applies the link changes to the tags as they are stored now, not to the snapshot, so links that publishing
-        /// changed for other content while the job was running are kept, and clears the changes. A tag is re-read by
-        /// name and group key, because that is the stored tag <see cref="ITagService.Save(Tag)"/> writes to. Removals are
-        /// applied before additions, so a link that moves between two tags that are stored as one (for example names
-        /// that only differ in a way the database collation ignores) is kept.
+        /// changed for other content while the job was running are kept, and clears the changes. Removals are applied
+        /// before additions, so a link that moves between two tags that are stored as one (for example names that only
+        /// differ in a way the database collation ignores) is kept.
         /// </summary>
         /// <returns>The number of links that were added or removed.</returns>
         private int SaveChanges(Dictionary<Tag, LinkChanges> changes)
@@ -186,7 +177,7 @@ namespace Geta.Optimizely.Tags
 
             foreach (var (tag, tagChanges) in changes.Where(change => change.Value.Removed.Count > 0))
             {
-                var current = _tagService.GetTagByNameAndGroup(tag.Name, tag.GroupKey);
+                var current = GetStoredTag(tag);
                 var removed = current?.PermanentLinks?.Count(tagChanges.Removed.Contains) ?? 0;
                 if (removed == 0)
                 {
@@ -200,7 +191,7 @@ namespace Geta.Optimizely.Tags
 
             foreach (var (tag, tagChanges) in changes.Where(change => change.Value.Added.Count > 0))
             {
-                var current = _tagService.GetTagByNameAndGroup(tag.Name, tag.GroupKey)
+                var current = GetStoredTag(tag)
                               ?? new Tag { Name = tag.Name, GroupKey = tag.GroupKey };
                 var links = current.PermanentLinks?.ToList() ?? new List<Guid>();
                 var missing = tagChanges.Added.Where(link => !links.Contains(link)).ToList();
@@ -217,6 +208,17 @@ namespace Geta.Optimizely.Tags
 
             changes.Clear();
             return changedLinks;
+        }
+
+        /// <summary>
+        /// Re-reads a tag from the snapshot by its identity. A tag the job created has no identity yet; saving it merges
+        /// it into the stored tag with the same name and group key, so that is the tag to read.
+        /// </summary>
+        private Tag GetStoredTag(Tag tag)
+        {
+            return tag.Id != null
+                ? _tagService.GetTagById(tag.Id)
+                : _tagService.GetTagByNameAndGroup(tag.Name, tag.GroupKey);
         }
 
         private static string TagKey(string groupKey, string name) => $"{groupKey}\n{name}";

@@ -16,6 +16,8 @@ public class TestContent : ContentData, IContent, ILocalizable
 {
     public const int TypeId = 42;
 
+    private static readonly string[] TagPropertyNames = { nameof(Tags), nameof(ArticleTags), nameof(StoryTags), nameof(LocalizedTags) };
+
     public TestContent(Guid contentGuid, string language = "en")
     {
         ContentGuid = contentGuid;
@@ -25,7 +27,7 @@ public class TestContent : ContentData, IContent, ILocalizable
         MasterLanguage = CultureInfo.GetCultureInfo("en");
         ExistingLanguages = new[] { Language };
 
-        foreach (var name in new[] { nameof(Tags), nameof(ArticleTags), nameof(StoryTags), nameof(LocalizedTags) })
+        foreach (var name in TagPropertyNames)
         {
             Property.Add(name, new PropertyString());
         }
@@ -66,7 +68,7 @@ public class TestContent : ContentData, IContent, ILocalizable
     public static ContentType CreateContentType()
     {
         var contentType = new ContentType { ID = TypeId, ModelType = typeof(TestContent) };
-        foreach (var name in new[] { nameof(Tags), nameof(ArticleTags), nameof(StoryTags), nameof(LocalizedTags) })
+        foreach (var name in TagPropertyNames)
         {
             contentType.PropertyDefinitions.Add(new PropertyDefinition { Name = name, TemplateHint = "Tags" });
         }

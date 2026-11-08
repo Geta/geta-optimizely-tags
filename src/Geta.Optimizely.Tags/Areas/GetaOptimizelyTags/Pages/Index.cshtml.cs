@@ -89,13 +89,8 @@ namespace Geta.Optimizely.Tags.Pages.Geta.Optimizely.Tags
             }
 
             existingTag.Name = Tag.Name;
-            // An empty field is bound as null, but publishing stores and looks up tags without a group key under "", and
-            // the tag store does not match null with "". Keep a group key that is already null, though: saving it as ""
-            // would overwrite a tag with the same name that is stored under "".
-            if (Tag.GroupKey != null || existingTag.GroupKey != null)
-            {
-                existingTag.GroupKey = Tag.GroupKey ?? string.Empty;
-            }
+            // An empty field is bound as null, but publishing stores and looks up tags without a group key under "".
+            existingTag.GroupKey = Tag.GroupKey ?? string.Empty;
 
             _tagRepository.Save(existingTag);
 

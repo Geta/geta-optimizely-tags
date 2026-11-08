@@ -65,18 +65,14 @@ namespace Geta.Optimizely.Tags.Core
                           GroupKey = groupKey
                       };
 
-            if (tag.PermanentLinks == null)
+            if (tag.PermanentLinks?.Contains(contentGuid) == true)
             {
-                tag.PermanentLinks = new List<Guid> { contentGuid };
-            }
-            else
-            {
-                if (!tag.PermanentLinks.Contains(contentGuid))
-                {
-                    tag.PermanentLinks.Add(contentGuid);
-                }
+                // Already linked, nothing to save.
+                return tag;
             }
 
+            tag.PermanentLinks ??= new List<Guid>();
+            tag.PermanentLinks.Add(contentGuid);
             Save(tag);
 
             return tag;
@@ -139,23 +135,13 @@ namespace Geta.Optimizely.Tags.Core
             // culture-specific groups of other languages, are left alone.
             foreach (var tag in GetTagsByContent(contentGuid).ToList())
             {
-                if (tag.PermanentLinks == null
-                    || !tagsByGroupKey.TryGetValue(tag.GroupKey ?? string.Empty, out var names)
-                    || names.Contains(tag.Name))
+                if (!tagsByGroupKey.TryGetValue(tag.GroupKey ?? string.Empty, out var names) || names.Contains(tag.Name))
                 {
                     continue;
                 }
 
-                // Save writes to the stored tag found by name and group key. Remove the link from that tag, so a
-                // duplicate of the tag never overwrites the links of the tag it duplicates.
-                var storedTag = GetTagByNameAndGroup(tag.Name, tag.GroupKey);
-                if (storedTag?.PermanentLinks == null || !storedTag.PermanentLinks.Contains(contentGuid))
-                {
-                    continue;
-                }
-
-                storedTag.PermanentLinks = storedTag.PermanentLinks.Where(link => link != contentGuid).ToList();
-                Save(storedTag);
+                tag.PermanentLinks = tag.PermanentLinks.Where(link => link != contentGuid).ToList();
+                Save(tag);
             }
         }
     }
