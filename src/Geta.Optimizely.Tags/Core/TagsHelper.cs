@@ -35,7 +35,9 @@ namespace Geta.Optimizely.Tags.Core
 
             if (cultureSpecificAttribute != null && cultureSpecificAttribute.IsCultureSpecific)
             {
-                groupKey += ContentLanguage.PreferredCulture ?? CultureInfo.CurrentCulture;
+                // Prefer the language of the content itself: publishing (for example from a scheduled publish or the
+                // API) does not necessarily run with the content's language as the preferred culture.
+                groupKey += (content as ILocale)?.Language ?? ContentLanguage.PreferredCulture ?? CultureInfo.CurrentCulture;
             }
 
             return groupKey;

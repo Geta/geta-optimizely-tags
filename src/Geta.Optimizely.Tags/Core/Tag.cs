@@ -8,9 +8,14 @@ using EPiServer.Data.Dynamic;
 
 namespace Geta.Optimizely.Tags.Core
 {
-    [EPiServerDataStore(AutomaticallyCreateStore = true, AutomaticallyRemapStore = true)]
+    [EPiServerDataStore(StoreName = StoreName, AutomaticallyCreateStore = true, AutomaticallyRemapStore = true)]
     public class Tag
     {
+        /// <summary>
+        /// The dynamic data store name. This is the default name the store has always had (the full type name).
+        /// </summary>
+        public const string StoreName = "Geta.Optimizely.Tags.Core.Tag";
+
         public Identity Id { get; set; }
 
         public string Name { get; set; }
@@ -31,6 +36,7 @@ namespace Geta.Optimizely.Tags.Core
 
         public bool CheckedEditContentTags { get; set; }
 
+        [Obsolete("No longer used. The admin UI keeps the current page in the query string instead.")]
         public int ItemPageNumber { get; set; }
 
         public override int GetHashCode()

@@ -33,22 +33,20 @@
                     beforeTagAdded: function () {
                         this.onFocus();
                     }.bind(this),
-                    afterTagAdded: function () {
-                        if (this._tagWidget) {
-                            var value = this._tagWidget.val();
-                            this._set("value", value);
-                            this.onChange(value);
+                    afterTagAdded: function (event, ui) {
+                        if (!ui.duringInitialization) {
+                            this._onTagsChanged();
                         }
+                    }.bind(this),
+                    afterTagRemoved: function () {
+                        this._onTagsChanged();
                     }.bind(this)
                 });
 
-                $(this.textbox).siblings("ul").first().sortable({
-                    stop: function (event, ui) {
-                        var list = $(event.target);
-                        var value = this._getTagValues(list);
-                        $(this._tagWidget).val(value);
-                        this._set("value", value);
-                        this.onChange(value);
+                this._getTagList().sortable({
+                    stop: function () {
+                        this._tagWidget.val(this._getTagValues(this._getTagList()));
+                        this._onTagsChanged();
                     }.bind(this)
                 });
             },
@@ -58,9 +56,27 @@
                 this._tagWidget = null;
             },
 
-            _setValueAttr: function (value, priorityChange) {
+            _onTagsChanged: function () {
+                if (this._tagWidget) {
+                    var value = this._tagWidget.val();
+                    this._set("value", value);
+                    this.onChange(value);
+                }
+            },
+
+            _setValueAttr: function (value) {
                 this.inherited(arguments);
-                this._started && !priorityChange && this._createTags();
+
+                // The value is set from outside (form load, refresh after publish, undo). Rebuild the tags whenever
+                // they differ from the new value, however the value was set, so the editor always shows the
+                // property value.
+                if (this._tagWidget && (value || "") !== this._getTagValues(this._getTagList())) {
+                    this._createTags();
+                }
+            },
+
+            _getTagList: function () {
+                return $(this.textbox).siblings("ul").first();
             },
 
             _getTagValues: function (list) {

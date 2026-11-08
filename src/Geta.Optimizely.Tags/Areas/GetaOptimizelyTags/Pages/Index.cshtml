@@ -47,7 +47,7 @@
                         </td>
                         <td>
                             <button type="submit" class="btn btn-primary"
-                                    asp-page-handler="update" asp-route-pageNumber="@item.ItemPageNumber"  asp-route-id="@item.Id.ToString()">
+                                    asp-page-handler="update" asp-route-pageNumber="@Model.Paging.PageNumber" asp-route-q="@Model.Query" asp-route-id="@item.Id.ToString()">
                                 <span data-feather="plus"></span> update
                             </button>
                         </td>
@@ -60,11 +60,11 @@
                         <td>@item.GroupKey</td>
                         <td colspan="2" class="text-end">
                             <button type="submit" class="btn btn-secondary"
-                                    asp-page-handler="edit" asp-route-pageNumber="@item.ItemPageNumber" asp-route-id="@item.Id.ToString()">
+                                    asp-page-handler="edit" asp-route-pageNumber="@Model.Paging.PageNumber" asp-route-q="@Model.Query" asp-route-id="@item.Id.ToString()">
                                 <span data-feather="edit"></span> edit
                             </button>
                             <button type="submit" class="btn btn-danger"
-                                    asp-page-handler="delete" asp-route-id="@item.Id.ToString()">
+                                    asp-page-handler="delete" asp-route-pageNumber="@Model.Paging.PageNumber" asp-route-q="@Model.Query" asp-route-id="@item.Id.ToString()">
                                 <span data-feather="trash-2"></span> delete
                             </button>
                         </td>

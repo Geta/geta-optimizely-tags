@@ -4,13 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using EPiServer.Cms.Shell;
 using EPiServer.Core;
 using EPiServer.Data;
 using EPiServer.DataAbstraction;
-using EPiServer.DataAnnotations;
-using Geta.Optimizely.Tags.Core.Attributes;
 
 namespace Geta.Optimizely.Tags.Core
 {
@@ -69,18 +65,14 @@ namespace Geta.Optimizely.Tags.Core
                           GroupKey = groupKey
                       };
 
-            if (tag.PermanentLinks == null)
+            if (tag.PermanentLinks?.Contains(contentGuid) == true)
             {
-                tag.PermanentLinks = new List<Guid> { contentGuid };
-            }
-            else
-            {
-                if (!tag.PermanentLinks.Contains(contentGuid))
-                {
-                    tag.PermanentLinks.Add(contentGuid);
-                }
+                // Already linked, nothing to save.
+                return tag;
             }
 
+            tag.PermanentLinks ??= new List<Guid>();
+            tag.PermanentLinks.Add(contentGuid);
             Save(tag);
 
             return tag;
@@ -117,65 +109,40 @@ namespace Geta.Optimizely.Tags.Core
 
         public void UpdateContentTags(IContent content)
         {
-            RemoveOldContentTags(content);
-            AddContentTags(content);
-        }
-
-        private void AddContentTags(IContent content)
-        {
             var contentType = _contentTypeRepository.Load(content.ContentTypeID);
+            var tagsByGroupKey = ContentTags.GetTagsByGroupKey(
+                content,
+                contentType,
+                cultureSpecificOnly: !ContentTags.IsMasterLanguageVersion(content));
 
-            var tagProperties = contentType.PropertyDefinitions.Where(p => p.TemplateHint == "Tags").ToArray();
-
-            if (!tagProperties.Any())
+            if (tagsByGroupKey.Count == 0)
             {
+                // No tag properties for this version, so there are no tags to link or unlink.
                 return;
             }
 
-            foreach (var tagProperty in tagProperties)
+            RemoveOldContentTags(content.ContentGuid, tagsByGroupKey);
+
+            foreach (var (groupKey, names) in tagsByGroupKey)
             {
-                var tagPropertyInfo = contentType.ModelType.GetProperty(tagProperty.Name);
-                var tags = GetPropertyTags(content as ContentData, tagProperty);
-
-                if (tagPropertyInfo == null)
-                {
-                    return;
-                }
-
-                var groupKeyAttribute =
-                    tagPropertyInfo.GetCustomAttribute(typeof(TagsGroupKeyAttribute)) as TagsGroupKeyAttribute;
-                var cultureSpecificAttribute
-                    = tagPropertyInfo.GetCustomAttribute(typeof(CultureSpecificAttribute)) as CultureSpecificAttribute;
-
-                var groupKey = TagsHelper.GetGroupKeyFromAttributes(groupKeyAttribute, cultureSpecificAttribute, content);
-
-                Save(content.ContentGuid, tags, groupKey);
+                Save(content.ContentGuid, names, groupKey);
             }
         }
 
-        private void RemoveOldContentTags(IContent content)
+        private void RemoveOldContentTags(Guid contentGuid, IReadOnlyDictionary<string, HashSet<string>> tagsByGroupKey)
         {
-            var contentGuid = content.ContentGuid;
-            var oldTags = GetTagsByContent(contentGuid);
-            var language = content.LanguageBranch();
-
-            foreach (var tag in oldTags)
+            // Only unlink tags in the group keys this content version writes to. Tags in other groups, such as the
+            // culture-specific groups of other languages, are left alone.
+            foreach (var tag in GetTagsByContent(contentGuid).ToList())
             {
-                if (tag.PermanentLinks == null || !tag.PermanentLinks.Contains(contentGuid) || !tag.GroupKey.EndsWith(language))
+                if (!tagsByGroupKey.TryGetValue(tag.GroupKey ?? string.Empty, out var names) || names.Contains(tag.Name))
                 {
                     continue;
                 }
 
-                tag.PermanentLinks.Remove(contentGuid);
-
+                tag.PermanentLinks = tag.PermanentLinks.Where(link => link != contentGuid).ToList();
                 Save(tag);
             }
-        }
-
-        private static IEnumerable<string> GetPropertyTags(ContentData content, PropertyDefinition propertyDefinition)
-        {
-            var tagNames = content[propertyDefinition.Name] as string;
-            return tagNames?.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>();
         }
     }
 }

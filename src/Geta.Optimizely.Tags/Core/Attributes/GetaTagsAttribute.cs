@@ -50,8 +50,8 @@ namespace Geta.Optimizely.Tags.Core.Attributes
                 TagsHelper.GetGroupKeyFromAttributes(groupKeyAttribute, cultureSpecificAttribute, ownerContent);
             extendedMetadata.EditorConfiguration["allowSpaces"] = AllowSpaces;
             extendedMetadata.EditorConfiguration["allowDuplicates"] = AllowDuplicates;
-            extendedMetadata.EditorConfiguration["caseSensitive "] = CaseSensitive;
-            extendedMetadata.EditorConfiguration["readOnly "] = ReadOnly;
+            extendedMetadata.EditorConfiguration["caseSensitive"] = CaseSensitive;
+            extendedMetadata.EditorConfiguration["readOnly"] = ReadOnly;
             extendedMetadata.EditorConfiguration["tagLimit"] = TagLimit;
         }
     }

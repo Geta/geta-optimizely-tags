@@ -55,9 +55,11 @@ namespace Geta.Optimizely.Tags.Core
                 return null;
             }
 
-            var existingTag = GetTagByNameAndGroup(tag.Name, tag.GroupKey);
-            return existingTag != null
-                ? TagStore.Save(tag, existingTag.GetIdentity())
+            // A tag loaded from the store is saved to its own row. A new tag is merged into the stored tag with the same
+            // name and group key, if there is one.
+            var id = tag.Id ?? GetTagByNameAndGroup(tag.Name, tag.GroupKey)?.GetIdentity();
+            return id != null
+                ? TagStore.Save(tag, id)
                 : TagStore.Save(tag);
         }
 
