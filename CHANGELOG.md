@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+- Exported content carries its tags again: the export package includes the tags linked to the exported content, with their group key, slug and description, and importing the package merges them into the tag store by name and group key and links them to the imported content. In 3.1.0 the tags were only restored if the import published the content ([#34](https://github.com/Geta/geta-optimizely-tags/issues/34))
+
 ## [3.1.0]
 
 - Fixed content export failing with a `NullReferenceException` in `TagsExporter.AddTagsToExport`; tags are no longer added to the export package, because importing the content publishes it and links it to its tags, creating the tags that are missing ([#34](https://github.com/Geta/geta-optimizely-tags/issues/34))

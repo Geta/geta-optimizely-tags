@@ -133,6 +133,13 @@ Tags are also kept in sync on every publish, so the job is mainly needed after i
 after changing the group key of a tag property or removing a tag property: publishing only updates the groups of the
 content's current tag properties.
 
+## Export and import
+
+When content is exported, the export package includes the tags that are linked to it, with their group key, slug and
+description. Importing the package adds those tags to the tag store and links them to the imported content: a tag is
+merged into an existing tag with the same name and group key, so importing never creates duplicate tags, and an
+existing tag keeps its own slug and description.
+
 ## Upgrading from Geta.Tags (CMS 11)
 
 The CMS 11 package `Geta.Tags` stored tags in the dynamic data store `Geta.Tags.Models.Tag`; this package uses

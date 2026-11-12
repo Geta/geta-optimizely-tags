@@ -1,6 +1,7 @@
 using System;
 using EPiServer;
 using EPiServer.Core;
+using EPiServer.Core.Transfer;
 using EPiServer.Enterprise;
 using EPiServer.Enterprise.Transfer;
 using Geta.Optimizely.Tags.Core.Export;
@@ -30,6 +31,15 @@ namespace Geta.Optimizely.Tags.Core.Events
         {
             _contentEvents.PublishedContent += OnPublishedContent;
             _dataExportEvents.ContentExporting += OnContentExporting;
+            RegisterTransferHandler.RegisterTransferHandlers += OnRegisterTransferHandlers;
+        }
+
+        private void OnRegisterTransferHandlers(object sender, RegisterTransferHandlerEventArgs e)
+        {
+            if (e.TransferType is TypeOfTransfer.Exporting or TypeOfTransfer.Importing)
+            {
+                e.RegisteredHandlers.Add(new TagsTransferHandler(_tagServiceFactory()));
+            }
         }
 
         private void OnContentExporting(ITransferContext transferContext, ContentExportingEventArgs e)
